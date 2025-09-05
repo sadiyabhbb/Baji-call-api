@@ -1,21 +1,21 @@
 /**
- * Baji999 OTP API Node.js/Express Example
- * সবকিছু এক ফাইলে রাখা হয়েছে
+ * Baji999 OTP API
+ * Browser-friendly, GET URL দিয়ে OTP পাঠানো যাবে
  */
 
 const express = require('express');
 const axios = require('axios');
 const app = express();
 
-// JSON request parse করার জন্য
+// JSON parse
 app.use(express.json());
 
-// Headers Baji999 API call এর জন্য
+// Baji999 API headers
 const headers = {
   "authorization": "Bearer eyJ0eXAiOiJKV1QiLCJh...আপনার_token_here...",
   "content-type": "application/json",
   "accept": "application/json, text/plain, */*",
-  "user-agent": "Mozilla/5.0 (Linux; Android 12; M2010J19CG Build/SKQ1.211202.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/139.0.7258.143 Mobile Safari/537.36",
+  "user-agent": "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Mobile Safari/537.36",
   "sec-ch-ua-platform": "Android",
   "x-internal-request": "61405202",
   "x-requested-with": "mark.via.gp",
@@ -23,13 +23,10 @@ const headers = {
   "referer": "https://baji999.in/bd/bn/member/profile/info/verify-phone"
 };
 
-// OTP পাঠানোর route
-app.post('/send-otp', async (req, res) => {
-  const { contact, contactType } = req.body;
-
-  if (!contact || !contactType) {
-    return res.status(400).json({ message: "contact এবং contactType দিতে হবে" });
-  }
+// GET route: browser থেকে call করলে OTP যাবে
+app.get('/send-otp', async (req, res) => {
+  const contact = req.query.contact || '01761838316';   // default number
+  const contactType = req.query.contactType || 'MOBILE';
 
   try {
     const response = await axios.post(
@@ -39,26 +36,15 @@ app.post('/send-otp', async (req, res) => {
     );
 
     if (response.data.code === 200) {
-      res.status(200).json({
-        message: 'OTP সফলভাবে পাঠানো হয়েছে',
-        otp: response.data.data.otp
-      });
+      res.send(`OTP সফলভাবে পাঠানো হয়েছে: ${response.data.data.otp}`);
     } else {
-      res.status(400).json({
-        message: 'OTP পাঠানো সম্ভব হয়নি',
-        error: response.data.message
-      });
+      res.send(`OTP পাঠানো সম্ভব হয়নি: ${response.data.message}`);
     }
   } catch (error) {
-    res.status(500).json({
-      message: 'সার্ভার এরর',
-      error: error.response ? error.response.data : error.message
-    });
+    res.send(`Server Error: ${error.response ? JSON.stringify(error.response.data) : error.message}`);
   }
 });
 
-// সার্ভার চালু
+// Render এ deploy করার জন্য PORT dynamic
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`সার্ভার চলছে: http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
